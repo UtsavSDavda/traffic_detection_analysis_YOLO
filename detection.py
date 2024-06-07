@@ -3,58 +3,124 @@ import numpy as np
 import cv2
 from ultralytics import YOLO
 import keyboard
+import threading
+import queue
 
-vehicles_detected_n = []
-vehicles_detected_s = []
-vehicles_detected_e = []
-vehicles_detected_w = []
+overalluniqueid = list()
 
 model = YOLO('yolov8n.pt')
 
-def truefn(ret_n,ret_s,ret_e,ret_w):
-    if ret_n == False or ret_s == False or ret_w == False or ret_e == False:
-        return False
+file_path1 = "video/video/cctv052x2004080516x01638.avi"
+file_path2 = "video/video/cctv052x2004080516x01639.avi"
+file_path3 = "video/video/cctv052x2004080516x01641.avi"
+file_path4 = "video/video/cctv052x2004080516x01643.avi"
+
+cap1 = cv2.VideoCapture(file_path1)
+cap2 = cv2.VideoCapture(file_path2)
+cap3 = cv2.VideoCapture(file_path3)
+cap4 = cv2.VideoCapture(file_path4)
+
+def addcountclass(y,yolo_counts):
+    if y == 1:
+        yolo_counts[0] += 1
+    elif y == 2:
+        yolo_counts[1] += 8
+    elif y == 3:
+        yolo_counts[2] += 5
+    elif y == 5:
+        yolo_counts[3] += 9
     else:
-        return True
-# def updatearray(detection):
-def vehicle_detection(cap_n,cap_s,cap_e,cap_w):
-    ret_n = True
-    ret_s = True
-    ret_e = True
-    ret_w = True
-    while truefn(ret_n,ret_s,ret_e,ret_w):
-        ret_n, frame_n = cap_n.read()
-        ret_s, frame_s = cap_s.read()
-        ret_e, frame_e = cap_e.read()
-        ret_w, frame_w = cap_w.read()
-        if truefn(ret_n,ret_s,ret_e,ret_w):
-            detections_n = model.track(frame_n,persist=True)
-            detections_s = model.track(frame_s,persist=True)
-            detections_e = model.track(frame_e,persist=True)
-            detections_w = model.track(frame_w,persist=True)
+        yolo_counts[4] += 9
 
-            plotted_n = detections_n[0].plot()
-            plotted_s = detections_s[0].plot()
-            plotted_e = detections_e[0].plot()
-            plotted_w = detections_w[0].plot()
+    return yolo_counts
+def getnumber(vehicle):
+    yolo_classes = [(1,"bicycle"),(2,"car"),(3,"motorcycle"),(5,"bus"),(7,"truck")]
+    yolo_counts = [0,0,0,0,0]
+    for i in range(len(vehicle)):
+        x = list(vehicle[i].keys())[0]
+        y = list(vehicle[i].values())[0]
+        if y in [1,2,3,5,7]:
+            yolo_counts = addcountclass(y,yolo_counts)
+    final = sum(i for i in yolo_counts)
+    return final
 
-            updatearray(detections_n)
-            updatearray(detections_s)
-            updatearray(detections_e)
-            updatearray(detections_w)
+def windowname(idname):
+    if idname == 1:
+        return 'North'
+    elif idname == 2:
+        return 'South'
+    elif idname == 3:
+        return 'East'
+    else:
+        return 'West'
+def track_vehicles(path,cap,threadn):
+    unique_id = set()
+    classlist = []
+    print(path)
+    success = True
+    while success:
+        success, frame = cap.read()
+        if success:
+            results = model.track(frame,persist=True)
+            for result1 in results:
+                box = result1.numpy().boxes
+                for bx in box:
+                    x = len(unique_id)
+                    unique_id.add(int((bx.id)[0]))
+                    y = len(unique_id)
+                    if y > x:
+                        classlist.append({int((bx.id)[0]):int((bx.cls)[0])})
 
 
-            if cv2.waitKey(10) and keyboard.is_pressed('q'):
-                break
+            frame2 = results[0].plot()
+            cv2.imshow(windowname(threadn),frame2)
+
+        key = cv2.waitKey(1)
+        if key == ord("q"):
+            break
+    print("classlist" + str(classlist))
+    print("list of ids" + str(unique_id))
+    overalluniqueid.append({ threadn : classlist})
+    cap.release()
+
+thread_1 = threading.Thread(target=track_vehicles(file_path1,cap1,1),daemon=True)
+thread_2 = threading.Thread(target=track_vehicles(file_path2,cap2,2),daemon=True)
+thread_3 = threading.Thread(target=track_vehicles(file_path3,cap3,3),daemon=True)
+thread_4 = threading.Thread(target=track_vehicles(file_path4,cap4,4),daemon=True)
+
+thread_1.start()
+thread_2.start()
+thread_3.start()
+thread_4.start()
+
+thread_1.join()
+thread_2.join()
+thread_3.join()
+thread_4.join()
+
+print(overalluniqueid)
+
+vehicle_north = overalluniqueid[0].get(1)
+vehicle_south = overalluniqueid[1].get(2)
+vehicle_east = overalluniqueid[2].get(3)
+vehicle_west = overalluniqueid[3].get(4)
+
+waitscoren = getnumber(vehicle_north)
+waitscores = getnumber(vehicle_south)
+waitscoree = getnumber(vehicle_east)
+waitscorew = getnumber(vehicle_west)
 
 
-north = ''
-south = ''
-east = ''
-west = ''
 
-cap_n = cv2.VideoCapture(north)
-cap_s = cv2.VideoCapture(south)
-cap_e = cv2.VideoCapture(east)
-cap_w = cv2.VideoCapture(west)
+print(vehicle_north)
+print(vehicle_south)
+print(vehicle_east)
+print(vehicle_west)
+
+print(carscoren)
+print(carscores)
+print(carscoree)
+print(carscorew)
+
+cv2.destroyAllWindows()
 
