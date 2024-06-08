@@ -2,9 +2,7 @@ from ultralytics import YOLO
 import numpy as np
 import cv2
 from ultralytics import YOLO
-import keyboard
 import threading
-import queue
 
 overalluniqueid = list()
 
@@ -20,19 +18,25 @@ cap2 = cv2.VideoCapture(file_path2)
 cap3 = cv2.VideoCapture(file_path3)
 cap4 = cv2.VideoCapture(file_path4)
 
+
+def add_yolo_counts(yolo_counts):
+    final = yolo_counts[0] + (8*yolo_counts[1]) + (5*yolo_counts[2]) + (9*(yolo_counts[3]+yolo_counts[4]))
+    return final
 def addcountclass(y,yolo_counts):
     if y == 1:
         yolo_counts[0] += 1
     elif y == 2:
-        yolo_counts[1] += 8
+        yolo_counts[1] += 1
     elif y == 3:
-        yolo_counts[2] += 5
+        yolo_counts[2] += 1
     elif y == 5:
-        yolo_counts[3] += 9
+        yolo_counts[3] += 1
     else:
-        yolo_counts[4] += 9
+        yolo_counts[4] += 1
 
     return yolo_counts
+#18599
+
 def getnumber(vehicle):
     yolo_classes = [(1,"bicycle"),(2,"car"),(3,"motorcycle"),(5,"bus"),(7,"truck")]
     yolo_counts = [0,0,0,0,0]
@@ -41,7 +45,7 @@ def getnumber(vehicle):
         y = list(vehicle[i].values())[0]
         if y in [1,2,3,5,7]:
             yolo_counts = addcountclass(y,yolo_counts)
-    final = sum(i for i in yolo_counts)
+    final = add_yolo_counts(yolo_counts)
     return final
 
 def windowname(idname):
@@ -111,16 +115,16 @@ waitscoree = getnumber(vehicle_east)
 waitscorew = getnumber(vehicle_west)
 
 
-
 print(vehicle_north)
 print(vehicle_south)
 print(vehicle_east)
 print(vehicle_west)
 
-print(carscoren)
-print(carscores)
-print(carscoree)
-print(carscorew)
+print(waitscoren)
+print(waitscores)
+print(waitscoree)
+print(waitscorew)
+
 
 cv2.destroyAllWindows()
 
