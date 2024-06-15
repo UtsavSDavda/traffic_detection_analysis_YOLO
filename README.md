@@ -1,5 +1,5 @@
 # traffic_detection_analysis_YOLO
-Detect traffic from CCCTV camera footage and automate decision making of traffic signals. 
+Detect traffic from CCCTV camera footage and automate decision making of traffic signals. This code helps capture traffic images and after detecting various vehicles from 4 footages in 4 directions, decides which signal to be GREEN for how much amount of time.
 
 **How to run the code**
 
@@ -21,27 +21,39 @@ Enabled threading as I want to do detections simultaneously in the future. All 4
 
 The CLASSLIST object is appended to a global variable OVERALLUNIQUEID. This object stores the CLASSLIST of all the threads. 4 in this case. We can display it just to get some rough idea of vehicles detected from all 4 sides before processing the data.
 
-After saving the detected objects' corresponding classes, we display the footage with the tracking.
+After saving the detected objects' corresponding classes, we display the footage with the tracking for each frame of each video.
 
 Next step: decision making of traffic signals. Once I get the idea what amount and type of vehicles I get on all 4 lanes, I use this information in an algorithm that will decide which lane should be GREEN and which should be RED.
 
 **How traffic signal algorithm works**
 
-I am using a weighted score to help the traffic signals' decision as to what type of vehicles should be given a priority.
+Based on the type of vehicles and amount of vehicles of each side, a SCORE is determined of each side.
 
-Each lane has a LANE_SCORE. This LANE_SCORE is made as maximum of 2 values: CAR_SCORE and TIME_SCORE.
+There are 4 sides : NORTH, SOUTH , EAST and WEST.
 
-TIME_SCORE of each lane is the total time sum of all the vehicles waited at the lane while the light is RED. Once it is green, some vehicles will pass through and some will remain at the lane itself when it turns RED again. This time, the TIME_SCORE of the remaining vehicles is counted to calculate the LANE_SCORE for the next time frame for which decisions will have to be made.
+The SCORE comprises of nothing but the summation of each vehicle in the lane which is multiplied with the WEIGHT_SCORE  alloted for each vehicle.
 
-CAR_SCORE is simply a score that is counted by noticing the amount of vehicles in lane weighted with the type of vehicles.
+This is done because lanes with vehicles like buses will have a smaller VEHICLE COUNT, but that does not mean they get a low priority. Thus, weights are alloted to the vehicles of a high SIZE and PRIORITY as well. 
 
-Maximum of CAR_SCORE and TIME_SCORE is used as the LANE_SCORE for each lane.
+For instance, I have set the weights as:
 
-The lane with highest LAN_SCORE will be allowed to pass through with a GREEN SIGNAL, meanwhile the other lanes will have a RED signal and their TIME_SCORE will keep increasing while they are RED.
+1 for bicycle, 8 for cars, 5 for motorcycles, 9 for buses and 9 for trucks.
 
-The descision to color a signal GREEN or RED for the next 10 seconds will be taken at a time. Every once in 5 times, the lane that last turned GREEN earliest will be flagged GREEN. This method ensures that no lane is RED at all times.  
+After this weighted multiplication of each vehicle, we add the results as the SCORE of each lane.
 
+SCORE = SUM(vehicle_weight_score*vehicle) + WAITING_SCORE,
 
+where WAITING SCORE = 10* (Number of vehicles waiting in RED Light)
+
+The variable WAITING_SCORE is applicable ONLY if the lane is in RED light while the score of the iteration is being calculated.
+
+The SCORE of opposite lanes will be added for decision making, because if we turn signal GREEN for a side, it is GREEN for the opposite side as well beccause vehicles from both sides can move ahead without blocking each other. 
+
+If NORTH side has a GREEN signal, vehicles from the NORTH will move to the SOUTH and vehicles from the SOUTH can move towards the NORTH as well because their lane will not have any vehicles ahead. But vehicles from the EAST side can not move during this time. 
+
+For every 10 seconds, decision is taken by traffic signal to choose which signal to turn GREEN. It will iterate the process of 10 seconds until the Traffic is CLEAR. 
  
+If a side is on RED during these 10 seconds, the SCORE of the side will increase by 10 X (number of vehicles waiting during this time).
 
+I have added this so that a side that keeps waiting for a lot of time, especially if it has a higher number of vehicles will get a priority.
 
