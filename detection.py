@@ -10,10 +10,10 @@ overalluniqueid = list()
 
 model = YOLO('yolov8n.pt')
 
-file_path1 = "video/video/cctv052x2004080516x01638.avi"
-file_path2 = "video/video/cctv052x2004080516x01639.avi"
-file_path3 = "video/video/cctv052x2004080516x01641.avi"
-file_path4 = "video/video/cctv052x2004080516x01643.avi"
+file_path1 = "path_for_traffic"
+file_path2 = "path_for_traffic"
+file_path3 = "path_for_traffic"
+file_path4 = "path_for_traffic"
 
 cap1 = cv2.VideoCapture(file_path1)
 cap2 = cv2.VideoCapture(file_path2)
