@@ -7,7 +7,7 @@ Detect traffic from CCCTV camera footage and automate decision making of traffic
 
 2. Install every necessary library imported in detection.py
 
-3. Add the footage videos you want to do the detections in the paths provided in the code. (Add file paths for all 4 videos as this code is for 4 lanes traffic)
+3. Add the footage videos you want to do the detections in the paths provided in the code. (Add file paths for all 4 videos as this code is for 4 direction traffic)
 
 4. Run the code.
 
